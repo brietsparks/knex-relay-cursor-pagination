@@ -1,5 +1,5 @@
 import knex, { Knex } from 'knex';
-import 'pg';
+import { KnexNameUtil } from 'knex-name-util';
 
 import { createPagination, PaginationDatasetParams, ForwardPaginationSliceParams, BackwardPaginationSliceParams, Page } from '../src';
 
@@ -436,6 +436,82 @@ describe('createPagination', () => {
         .select('id', 'title', 'creation_timestamp');
 
       expect(pagination.getPage(rows)).toEqual(testCase.expected);
+    });
+  });
+
+  describe('createPagination with knex-name-util', () => {
+    interface Post {
+      id: string;
+      title: string;
+      creationTimestamp: string;
+    }
+
+    test('', async () => {
+      const postsTable = new KnexNameUtil('posts', {
+        id: 'id',
+        title: 'title',
+        creationTimestamp: 'creation_timestamp',
+      });
+
+      const pagination = createPagination({
+        from: postsTable.name,
+        sortColumn: {
+          column: postsTable.column('creationTimestamp'),
+          alias: postsTable.prefixedAlias('creationTimestamp'),
+        },
+        sortDirection: 'desc',
+        cursorColumn: {
+          column: postsTable.column('id'),
+          alias: postsTable.prefixedAlias('id'),
+        },
+        first: 3,
+        after: btoa(posts[5].id,)
+      });
+
+      const rows = await db.from(postsTable.name)
+        .where(pagination.where.column, pagination.where.comparator, pagination.where.value)
+        .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
+        .limit(pagination.limit)
+        .select(postsTable.selectAll());
+
+      const page = pagination.getPage<Post>(rows, {
+        mapItem: postsTable.toAlias
+      });
+
+      expect(page).toEqual({
+        edges: [
+          {
+            cursor: btoa(posts[4].id),
+            node: {
+              id: posts[4].id,
+              title: posts[4].title,
+              creationTimestamp: posts[4].creation_timestamp
+            }
+          },
+          {
+            cursor: btoa(posts[3].id),
+            node: {
+              id: posts[3].id,
+              title: posts[3].title,
+              creationTimestamp: posts[3].creation_timestamp
+            }
+          },
+          {
+            cursor: btoa(posts[2].id),
+            node: {
+              id: posts[2].id,
+              title: posts[2].title,
+              creationTimestamp: posts[2].creation_timestamp
+            }
+          }
+        ],
+        pageInfo: {
+          startCursor: btoa(posts[4].id),
+          endCursor: btoa(posts[2].id),
+          hasPreviousPage: true,
+          hasNextPage: true,
+        }
+      });
     });
   });
 

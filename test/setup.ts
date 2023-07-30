@@ -1,3 +1,4 @@
+import 'pg';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 
 export type StartedPgTestContainer = StartedTestContainer;

@@ -16,8 +16,8 @@ export interface PaginationDatasetParams {
 }
 
 export interface PaginationCursorParams {
-  obfuscateCursor?: (cursor: string) => string;
-  deobfuscateCursor?: (obfuscatedCursor: string) => string;
+  obfuscateCursor?: (cursor: Cursor) => Cursor;
+  deobfuscateCursor?: (obfuscatedCursor: Cursor) => Cursor;
   onCursorMissing?: 'throw' | 'omit';
 }
 
@@ -57,7 +57,7 @@ export interface Predicate {
   where: Where;
 }
 
-export type Cursor = Knex.Value;
+export type Cursor = string | number;
 
 export type OrderBy = {
   column: string;
@@ -78,22 +78,24 @@ export interface NoopWhere {
   value: 0
 }
 
-export interface Edge<T = unknown, U = string> {
-  cursor: U;
+export interface Edge<T = unknown> {
+  cursor: Cursor;
   node: T;
 }
 
 export interface PageInfo {
-  endCursor?: string;
+  endCursor?: Cursor;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
-  startCursor?: string;
+  startCursor?: Cursor;
 }
 
 export interface Page<T = unknown> {
   edges: Edge<T>[];
   pageInfo: PageInfo;
 }
+
+type Row = { [key: string]: unknown };
 
 export function createPagination(params: PaginationParams) {
   const {
@@ -150,7 +152,7 @@ export function createPagination(params: PaginationParams) {
     where
   };
 
-  const processItems = (rows: unknown[]): [unknown[], unknown|undefined] => {
+  const processItems = (rows: Row[]): [Row[], Row|undefined] => {
     if (rows.length === 0) {
       return [[], undefined];
     }
@@ -168,14 +170,16 @@ export function createPagination(params: PaginationParams) {
     throw new Error('invalid state for getRows');
   };
 
-  function getPage<T = unknown>(rows: T[]) {
+  function getPage<T = Row>(rows: Row[], opts: { mapItem?: (item: Row) => T } = {}): Page<T> {
     const { obfuscateCursor = btoa, onCursorMissing = 'omit' } = params;
+    const { mapItem = (item: Row) => item } = opts;
+    const cursorAlias = getAlias(params.cursorColumn);
 
     const [items, adjacentItem] = processItems(rows);
 
     const edges = [];
     for (const item of items) {
-      const cursor = (item as any)[cursorColumn];
+      const cursor = (item)[cursorAlias];
       if (cursor === undefined || cursor === null) {
         if (onCursorMissing === 'throw') {
           throw new Error('cursor is missing');
@@ -185,12 +189,13 @@ export function createPagination(params: PaginationParams) {
       }
 
       const edge = {
-        cursor: obfuscateCursor(cursor as string),
-        node: item,
+        cursor: obfuscateCursor(cursor.toString()),
+        node: mapItem(item as Row),
       };
 
       edges.push(edge);
     }
+
 
     const pageInfo: PageInfo = {
       hasNextPage: paginationSliceParams.direction === 'backward' ? !!before : !!adjacentItem,
@@ -202,7 +207,7 @@ export function createPagination(params: PaginationParams) {
     return {
       edges,
       pageInfo,
-    };
+    } as unknown as Page<T>;
   }
 
   return {
@@ -217,6 +222,14 @@ function getColumn(column: Column): string {
   }
   const aliasedColumn = column as AliasedColumn;
   return aliasedColumn.column;
+}
+
+function getAlias(column: Column): string {
+  if (typeof column === 'string') {
+    return column;
+  }
+  const aliasedColumn = column as AliasedColumn;
+  return aliasedColumn.alias;
 }
 
 function getInternalSliceParams(sliceParams: PaginationSliceParams): InternalSliceParams {
