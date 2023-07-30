@@ -46,5 +46,18 @@
       "path": "dist/knex-relay-cursor-pagination.esm.js",
       "limit": "10 KB"
     }
-  ]
+  ],
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^8.2.6",
+    "@tsconfig/recommended": "^1.0.2",
+    "dts-cli": "^2.0.3",
+    "husky": "^8.0.3",
+    "knex": "^2.5.1",
+    "knex-name-util": "^0.2.0",
+    "pg": "^8.11.1",
+    "size-limit": "^8.2.6",
+    "testcontainers": "^8.11.1",
+    "tslib": "^2.6.0",
+    "typescript": "^5.1.6"
+  }
 }
