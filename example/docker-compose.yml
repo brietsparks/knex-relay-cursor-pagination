@@ -1,0 +1,11 @@
+version: '3.7'
+
+services:
+  knex_relay_cursor_pagination_postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres

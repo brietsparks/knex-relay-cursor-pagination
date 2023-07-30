@@ -28,18 +28,15 @@ interface AliasedColumn {
   alias: string;
 }
 
-export type PaginationSliceParams = XOR<
-  ForwardPaginationSliceParams,
-  BackwardPaginationSliceParams
->;
+export type PaginationSliceParams = ForwardPaginationSliceParams & BackwardPaginationSliceParams;
 
 export interface ForwardPaginationSliceParams {
-  first: number;
+  first?: number;
   after?: Cursor;
 }
 
 export interface BackwardPaginationSliceParams {
-  last: number;
+  last?: number;
   before?: Cursor;
 }
 
@@ -246,7 +243,7 @@ function getInternalSliceParams(sliceParams: PaginationSliceParams): InternalSli
     direction: 'forward',
     cursor: forwardSliceParams.after,
     limit: forwardSliceParams.first,
-  };
+  } as InternalSliceParams;
 }
 
 function getSortDirection(specifiedSortDirection: SortDirection, paginationDirection: PaginationDirection) {

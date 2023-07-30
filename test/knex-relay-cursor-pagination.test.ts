@@ -515,6 +515,7 @@ describe('createPagination', () => {
     });
   });
 
+  test.todo('throw if no slice params');
   test.todo('custom obfuscateCursor');
   test.todo('custom deobfuscateCursor');
   test.todo('throw onCursorMissing');

@@ -1,0 +1,26 @@
+type Query {
+  posts(first: Int, after: String, last: Int, before: String): PostsConnection!
+}
+
+type Post {
+  id: String!
+  title: String!
+  creationTimestamp: String!
+}
+
+type PostsConnection {
+  edges: [PostEdge!]!
+  pageInfo: PageInfo!
+}
+
+type PostEdge {
+  cursor: String!
+  node: Post
+}
+
+type PageInfo {
+  startCursor: String
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
