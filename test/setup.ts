@@ -3,7 +3,10 @@ import { GenericContainer, StartedTestContainer } from 'testcontainers';
 
 export type StartedPgTestContainer = StartedTestContainer;
 
-export type CreatePgTestcontainerResult = [StartedPgTestContainer, PgConnectionParams];
+export type CreatePgTestcontainerResult = [
+  StartedPgTestContainer,
+  PgConnectionParams
+];
 
 export interface PgConnectionParams {
   host: string;
@@ -30,8 +33,8 @@ export async function createPgTestcontainer(): Promise<CreatePgTestcontainerResu
 
   const connectionParams = {
     ...containerParams,
-    port: pgContainer.getMappedPort(5432)
+    port: pgContainer.getMappedPort(5432),
   };
 
-  return [pgContainer, connectionParams]
+  return [pgContainer, connectionParams];
 }

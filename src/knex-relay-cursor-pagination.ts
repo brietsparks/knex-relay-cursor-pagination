@@ -1,10 +1,11 @@
 import { Knex } from 'knex';
 
 type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
-type XOR<T, U> = (T | U) extends object ? (Without<T, U> & U) | (Without<U, T> & T) : T | U;
+type XOR<T, U> = T | U extends object
+  ? (Without<T, U> & U) | (Without<U, T> & T)
+  : T | U;
 
-export type PaginationParams =
-  PaginationSliceParams &
+export type PaginationParams = PaginationSliceParams &
   PaginationDatasetParams &
   PaginationCursorParams;
 
@@ -28,7 +29,8 @@ interface AliasedColumn {
   alias: string;
 }
 
-export type PaginationSliceParams = ForwardPaginationSliceParams & BackwardPaginationSliceParams;
+export type PaginationSliceParams = ForwardPaginationSliceParams &
+  BackwardPaginationSliceParams;
 
 export interface ForwardPaginationSliceParams {
   first?: number;
@@ -70,9 +72,9 @@ export interface Where {
 }
 
 export interface NoopWhere {
-  column: (q: Knex.QueryBuilder) => Knex.QueryBuilder,
-  comparator: '>',
-  value: 0
+  column: (q: Knex.QueryBuilder) => Knex.QueryBuilder;
+  comparator: '>';
+  value: 0;
 }
 
 export interface Edge<T = unknown> {
@@ -95,17 +97,23 @@ export interface Page<T = unknown> {
 type Row = { [key: string]: unknown };
 
 export function createPagination(params: PaginationParams) {
-  const {
+  const { first, after, last, before } = params;
+
+  const paginationSliceParams = getInternalSliceParams({
     first,
     after,
     last,
     before,
-  } = params;
+  } as PaginationSliceParams);
 
-  const paginationSliceParams = getInternalSliceParams({ first, after, last, before } as PaginationSliceParams);
-
-  const comparator = getComparator(params.sortDirection, paginationSliceParams.direction);
-  const sortDirection = getSortDirection(params.sortDirection, paginationSliceParams.direction);
+  const comparator = getComparator(
+    params.sortDirection,
+    paginationSliceParams.direction
+  );
+  const sortDirection = getSortDirection(
+    params.sortDirection,
+    paginationSliceParams.direction
+  );
   const sortColumn = getColumn(params.sortColumn);
   const cursorColumn = getColumn(params.cursorColumn);
 
@@ -124,17 +132,18 @@ export function createPagination(params: PaginationParams) {
       return {
         column: (q: Knex.QueryBuilder) => q,
         comparator: '>',
-        value: 0
+        value: 0,
       } as unknown as Where;
     }
 
     const { deobfuscateCursor = atob } = params;
     const cursor = deobfuscateCursor(paginationSliceParams.cursor as string);
 
-    const subquery = (q: Knex.QueryBuilder): any => q
-      .from(params.from)
-      .select(sortColumn)
-      .where(cursorColumn, '=', cursor as Knex.Value);
+    const subquery = (q: Knex.QueryBuilder): any =>
+      q
+        .from(params.from)
+        .select(sortColumn)
+        .where(cursorColumn, '=', cursor as Knex.Value);
 
     return {
       column: sortColumn,
@@ -146,10 +155,10 @@ export function createPagination(params: PaginationParams) {
   const predicate: Predicate = {
     orderBy,
     limit: queryableLimit,
-    where
+    where,
   };
 
-  const processItems = (rows: Row[]): [Row[], Row|undefined] => {
+  const processItems = (rows: Row[]): [Row[], Row | undefined] => {
     if (rows.length === 0) {
       return [[], undefined];
     }
@@ -167,7 +176,10 @@ export function createPagination(params: PaginationParams) {
     throw new Error('invalid state for getRows');
   };
 
-  function getPage<T = Row>(rows: Row[], opts: { mapItem?: (item: Row) => T } = {}): Page<T> {
+  function getPage<T = Row>(
+    rows: Row[],
+    opts: { mapItem?: (item: Row) => T } = {}
+  ): Page<T> {
     const { obfuscateCursor = btoa, onCursorMissing = 'omit' } = params;
     const { mapItem = (item: Row) => item } = opts;
     const cursorAlias = getAlias(params.cursorColumn);
@@ -176,7 +188,7 @@ export function createPagination(params: PaginationParams) {
 
     const edges = [];
     for (const item of items) {
-      const cursor = (item)[cursorAlias];
+      const cursor = item[cursorAlias];
       if (cursor === undefined || cursor === null) {
         if (onCursorMissing === 'throw') {
           throw new Error('cursor is missing');
@@ -193,10 +205,15 @@ export function createPagination(params: PaginationParams) {
       edges.push(edge);
     }
 
-
     const pageInfo: PageInfo = {
-      hasNextPage: paginationSliceParams.direction === 'backward' ? !!before : !!adjacentItem,
-      hasPreviousPage: paginationSliceParams.direction === 'forward' ? !!after : !!adjacentItem,
+      hasNextPage:
+        paginationSliceParams.direction === 'backward'
+          ? !!before
+          : !!adjacentItem,
+      hasPreviousPage:
+        paginationSliceParams.direction === 'forward'
+          ? !!after
+          : !!adjacentItem,
       startCursor: edges.length ? edges[0].cursor : undefined,
       endCursor: edges.length ? edges[edges.length - 1].cursor : undefined,
     };
@@ -210,7 +227,7 @@ export function createPagination(params: PaginationParams) {
   return {
     ...predicate,
     getPage,
-  }
+  };
 }
 
 function getColumn(column: Column): string {
@@ -229,7 +246,9 @@ function getAlias(column: Column): string {
   return aliasedColumn.alias;
 }
 
-function getInternalSliceParams(sliceParams: PaginationSliceParams): InternalSliceParams {
+function getInternalSliceParams(
+  sliceParams: PaginationSliceParams
+): InternalSliceParams {
   if (sliceParams.last) {
     return {
       direction: 'backward',
@@ -246,7 +265,10 @@ function getInternalSliceParams(sliceParams: PaginationSliceParams): InternalSli
   } as InternalSliceParams;
 }
 
-function getSortDirection(specifiedSortDirection: SortDirection, paginationDirection: PaginationDirection) {
+function getSortDirection(
+  specifiedSortDirection: SortDirection,
+  paginationDirection: PaginationDirection
+) {
   if (paginationDirection === 'forward') {
     return specifiedSortDirection;
   }
@@ -264,7 +286,10 @@ function getSortDirection(specifiedSortDirection: SortDirection, paginationDirec
 
 type Comparator = '<' | '>';
 
-function getComparator(specifiedSortDirection: SortDirection, paginationDirection: PaginationDirection): Comparator {
+function getComparator(
+  specifiedSortDirection: SortDirection,
+  paginationDirection: PaginationDirection
+): Comparator {
   if (specifiedSortDirection === 'desc') {
     if (paginationDirection === 'forward') {
       return '<';
@@ -276,7 +301,7 @@ function getComparator(specifiedSortDirection: SortDirection, paginationDirectio
 
   if (specifiedSortDirection === 'asc') {
     if (paginationDirection === 'forward') {
-      return '>'
+      return '>';
     }
     if (paginationDirection === 'backward') {
       return '<';

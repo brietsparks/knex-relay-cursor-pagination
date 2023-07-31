@@ -1,7 +1,13 @@
 import knex, { Knex } from 'knex';
 import { KnexNameUtil } from 'knex-name-util';
 
-import { createPagination, PaginationDatasetParams, ForwardPaginationSliceParams, BackwardPaginationSliceParams, Page } from '../src';
+import {
+  createPagination,
+  PaginationDatasetParams,
+  ForwardPaginationSliceParams,
+  BackwardPaginationSliceParams,
+  Page,
+} from '../src';
 
 import { posts } from './data';
 import { createPgTestcontainer, StartedPgTestContainer } from './setup';
@@ -27,8 +33,8 @@ describe('createPagination', () => {
       client: 'pg',
       connection,
       migrations: {
-        directory: `${__dirname}/migrations`
-      }
+        directory: `${__dirname}/migrations`,
+      },
     });
     await db.migrate.up();
   });
@@ -43,10 +49,12 @@ describe('createPagination', () => {
       from: 'posts',
       sortColumn: 'creation_timestamp',
       sortDirection: 'desc',
-      cursorColumn: 'id'
+      cursorColumn: 'id',
     };
 
-    const sortedPosts = [...posts].sort((a, b) => b.creation_timestamp.getTime() - a.creation_timestamp.getTime());
+    const sortedPosts = [...posts].sort(
+      (a, b) => b.creation_timestamp.getTime() - a.creation_timestamp.getTime()
+    );
 
     describe('forward paging', () => {
       const cases: Array<[string, ForwardPagingTestCase]> = [
@@ -69,8 +77,8 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[7].id),
                 endCursor: btoa(posts[0].id),
                 hasPreviousPage: false,
-                hasNextPage: false
-              }
+                hasNextPage: false,
+              },
             },
           },
         ],
@@ -93,10 +101,10 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[7].id),
                 endCursor: btoa(posts[0].id),
                 hasPreviousPage: false,
-                hasNextPage: false
-              }
+                hasNextPage: false,
+              },
             },
-          }
+          },
         ],
         [
           'first...n',
@@ -112,17 +120,17 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[7].id),
                 endCursor: btoa(posts[5].id),
                 hasPreviousPage: false,
-                hasNextPage: true
-              }
+                hasNextPage: true,
+              },
             },
-          }
+          },
         ],
         [
           'm...n',
           {
             sliceParams: {
               first: 3,
-              after: btoa(sortedPosts[2].id)
+              after: btoa(sortedPosts[2].id),
             },
             expected: {
               edges: [
@@ -134,17 +142,17 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[4].id),
                 endCursor: btoa(posts[2].id),
                 hasPreviousPage: true,
-                hasNextPage: true
-              }
+                hasNextPage: true,
+              },
             },
-          }
+          },
         ],
         [
           'm...last, row-count at limit',
           {
             sliceParams: {
               first: 3,
-              after: btoa(sortedPosts.at(-4)!.id)
+              after: btoa(sortedPosts.at(-4)!.id),
             },
             expected: {
               edges: [
@@ -156,17 +164,17 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[2].id),
                 endCursor: btoa(posts[0].id),
                 hasPreviousPage: true,
-                hasNextPage: false
-              }
+                hasNextPage: false,
+              },
             },
-          }
+          },
         ],
         [
           'm...last, row-count under limit',
           {
             sliceParams: {
               first: 4,
-              after: btoa(sortedPosts.at(-4)!.id)
+              after: btoa(sortedPosts.at(-4)!.id),
             },
             expected: {
               edges: [
@@ -178,11 +186,11 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[2].id),
                 endCursor: btoa(posts[0].id),
                 hasPreviousPage: true,
-                hasNextPage: false
-              }
+                hasNextPage: false,
+              },
             },
-          }
-        ]
+          },
+        ],
       ];
 
       test.each(cases)('%s', async (_, testCase: ForwardPagingTestCase) => {
@@ -191,8 +199,13 @@ describe('createPagination', () => {
           ...testCase.sliceParams,
         });
 
-        const rows = await db.from('posts')
-          .where(pagination.where.column, pagination.where.comparator, pagination.where.value)
+        const rows = await db
+          .from('posts')
+          .where(
+            pagination.where.column,
+            pagination.where.comparator,
+            pagination.where.value
+          )
           .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
           .limit(pagination.limit)
           .select('*');
@@ -222,10 +235,10 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[0].id),
                 endCursor: btoa(posts[7].id),
                 hasPreviousPage: false,
-                hasNextPage: false
-              }
+                hasNextPage: false,
+              },
             },
-          }
+          },
         ],
         [
           'last...first, row-count under limit',
@@ -246,10 +259,10 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[0].id),
                 endCursor: btoa(posts[7].id),
                 hasPreviousPage: false,
-                hasNextPage: false
-              }
+                hasNextPage: false,
+              },
             },
-          }
+          },
         ],
         [
           'last...m',
@@ -266,16 +279,16 @@ describe('createPagination', () => {
                 endCursor: btoa(posts[2].id),
                 hasPreviousPage: true,
                 hasNextPage: false,
-              }
+              },
             },
-          }
+          },
         ],
         [
           'n...m',
           {
             sliceParams: {
               last: 3,
-              before: btoa(sortedPosts.at(-3)!.id)
+              before: btoa(sortedPosts.at(-3)!.id),
             },
             expected: {
               edges: [
@@ -287,17 +300,17 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[3].id),
                 endCursor: btoa(posts[5].id),
                 hasPreviousPage: true,
-                hasNextPage: true
-              }
+                hasNextPage: true,
+              },
             },
-          }
+          },
         ],
         [
           'm...first, row-count at limit',
           {
             sliceParams: {
               last: 3,
-              before: btoa(sortedPosts[3].id)
+              before: btoa(sortedPosts[3].id),
             },
             expected: {
               edges: [
@@ -309,17 +322,17 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[5].id),
                 endCursor: btoa(posts[7].id),
                 hasPreviousPage: false,
-                hasNextPage: true
-              }
+                hasNextPage: true,
+              },
             },
-          }
+          },
         ],
         [
           'm...first, row-count under limit',
           {
             sliceParams: {
               last: 4,
-              before: btoa(sortedPosts[3].id)
+              before: btoa(sortedPosts[3].id),
             },
             expected: {
               edges: [
@@ -331,11 +344,11 @@ describe('createPagination', () => {
                 startCursor: btoa(posts[5].id),
                 endCursor: btoa(posts[7].id),
                 hasPreviousPage: false,
-                hasNextPage: true
-              }
+                hasNextPage: true,
+              },
             },
-          }
-        ]
+          },
+        ],
       ];
 
       test.each(cases)('%s', async (_, testCase: BackwardPagingTestCase) => {
@@ -344,8 +357,13 @@ describe('createPagination', () => {
           ...testCase.sliceParams,
         });
 
-        const rows = await db.from('posts')
-          .where(pagination.where.column, pagination.where.comparator, pagination.where.value)
+        const rows = await db
+          .from('posts')
+          .where(
+            pagination.where.column,
+            pagination.where.comparator,
+            pagination.where.value
+          )
           .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
           .limit(pagination.limit)
           .select('*');
@@ -377,16 +395,16 @@ describe('createPagination', () => {
               endCursor: btoa(posts[1].id),
               hasPreviousPage: false,
               hasNextPage: false,
-            }
-          }
-        }
+            },
+          },
+        },
       ],
       [
         'm...n',
         {
           sliceParams: {
             first: 3,
-            after: btoa('00000000-0000-0000-0000-000000000003')
+            after: btoa('00000000-0000-0000-0000-000000000003'),
           },
           expected: {
             edges: [
@@ -399,10 +417,10 @@ describe('createPagination', () => {
               endCursor: btoa(posts[7].id),
               hasPreviousPage: true,
               hasNextPage: true,
-            }
-          }
-        }
-      ]
+            },
+          },
+        },
+      ],
     ];
 
     const baseParams: PaginationDatasetParams = {
@@ -413,10 +431,13 @@ describe('createPagination', () => {
     };
 
     test.each(cases)('%s', async (_, testCase) => {
-      const cte = db.from('posts')
+      const cte = db
+        .from('posts')
         .select(
           'posts.*',
-          db.raw(`concat(count("comments"."id"), ':', "posts".id) as comments_count`)
+          db.raw(
+            `concat(count("comments"."id"), ':', "posts".id) as comments_count`
+          )
         )
         .leftJoin('comments', 'posts.id', 'comments.post_id')
         .groupBy('posts.id')
@@ -430,7 +451,11 @@ describe('createPagination', () => {
       const rows = await db
         .with('cte', cte)
         .from('cte')
-        .where(pagination.where.column, pagination.where.comparator, pagination.where.value)
+        .where(
+          pagination.where.column,
+          pagination.where.comparator,
+          pagination.where.value
+        )
         .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
         .limit(pagination.limit)
         .select('id', 'title', 'creation_timestamp');
@@ -465,17 +490,22 @@ describe('createPagination', () => {
           alias: postsTable.prefixedAlias('id'),
         },
         first: 3,
-        after: btoa(posts[5].id,)
+        after: btoa(posts[5].id),
       });
 
-      const rows = await db.from(postsTable.name)
-        .where(pagination.where.column, pagination.where.comparator, pagination.where.value)
+      const rows = await db
+        .from(postsTable.name)
+        .where(
+          pagination.where.column,
+          pagination.where.comparator,
+          pagination.where.value
+        )
         .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
         .limit(pagination.limit)
         .select(postsTable.selectAll());
 
       const page = pagination.getPage<Post>(rows, {
-        mapItem: postsTable.toAlias
+        mapItem: postsTable.toAlias,
       });
 
       expect(page).toEqual({
@@ -485,32 +515,32 @@ describe('createPagination', () => {
             node: {
               id: posts[4].id,
               title: posts[4].title,
-              creationTimestamp: posts[4].creation_timestamp
-            }
+              creationTimestamp: posts[4].creation_timestamp,
+            },
           },
           {
             cursor: btoa(posts[3].id),
             node: {
               id: posts[3].id,
               title: posts[3].title,
-              creationTimestamp: posts[3].creation_timestamp
-            }
+              creationTimestamp: posts[3].creation_timestamp,
+            },
           },
           {
             cursor: btoa(posts[2].id),
             node: {
               id: posts[2].id,
               title: posts[2].title,
-              creationTimestamp: posts[2].creation_timestamp
-            }
-          }
+              creationTimestamp: posts[2].creation_timestamp,
+            },
+          },
         ],
         pageInfo: {
           startCursor: btoa(posts[4].id),
           endCursor: btoa(posts[2].id),
           hasPreviousPage: true,
           hasNextPage: true,
-        }
+        },
       });
     });
   });

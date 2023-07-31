@@ -44,7 +44,7 @@ export const posts: Post[] = [
     id: '00000000-0000-0000-0000-000000000007',
     creation_timestamp: new Date('2023-07-13'),
     title: 'Post 7',
-  }
+  },
 ];
 
 export const comments = [
