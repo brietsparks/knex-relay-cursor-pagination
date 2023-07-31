@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "gql:schema": "graphql-codegen --config codegen.schema.yml",
-    "start": "ts-node -r tsconfig-paths/register src/app.ts"
+    "start": "ts-node -r tsconfig-paths/register src/app.ts",
+    "dev": "nodemon -r tsconfig-paths/register src/app.ts"
   },
   "author": "Briet Sparks",
   "license": "ISC",
@@ -26,6 +27,7 @@
     "@graphql-codegen/typescript": "^2.8.5",
     "@graphql-codegen/typescript-operations": "^2.5.12",
     "@graphql-codegen/typescript-resolvers": "^2.7.12",
+    "nodemon": "^3.0.1",
     "tsconfig-paths": "^4.2.0"
   }
 }

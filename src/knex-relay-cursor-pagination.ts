@@ -164,13 +164,23 @@ export function createPagination(params: PaginationParams) {
     }
 
     if (rows.length <= returnableLimit) {
-      return [rows, undefined];
+      return [
+        paginationSliceParams.direction === 'backward'
+          ? [...rows.reverse()]
+          : rows,
+        undefined,
+      ];
     }
 
     if (rows.length === queryableLimit) {
       const itemsOfPage = [...rows];
-      const prevItem = itemsOfPage.pop();
-      return [itemsOfPage, prevItem];
+      const adjacentItem = itemsOfPage.pop();
+      return [
+        paginationSliceParams.direction === 'backward'
+          ? itemsOfPage.reverse()
+          : itemsOfPage,
+        adjacentItem,
+      ];
     }
 
     throw new Error('invalid state for getRows');
