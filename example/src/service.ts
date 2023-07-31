@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
 
-import { createPagination, PaginationParams, PaginationSliceParams } from '../../src';
+import { createPagination, PaginationSliceParams } from '../../src';
 
 export type Service = ReturnType<typeof createService>;
 
@@ -33,7 +33,7 @@ export class PostsProvider {
       sortColumn: 'creation_timestamp',
       sortDirection: 'desc',
       ...params.pagination
-    } as PaginationParams);
+    });
 
     const rows = await this.db.from('posts')
       .where(pagination.where.column, pagination.where.comparator, pagination.where.value)
