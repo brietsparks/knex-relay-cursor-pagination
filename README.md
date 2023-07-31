@@ -67,3 +67,6 @@ Either `first` or `last` is required
 - `deobfuscateCursor`: a function for transforming the cursor's  opaque value to the raw value
 - `onCursorMissing`: `'omit' | 'throw'`, the behavior for when a queried row's cursor value is missing. Defaults to `'omit'`
 
+## Examples
+
+An example app is in the [/example](https://github.com/brietsparks/knex-relay-cursor-pagination/tree/master/example)directory of this repo. See its README.md for more info.
