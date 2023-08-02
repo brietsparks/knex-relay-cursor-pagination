@@ -19,8 +19,11 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v1
+      - name: Setup rootless Docker
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Remove Docket root socket
+        run: sudo rm -rf /var/run/docker.sock
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
