@@ -99,6 +99,10 @@ type Row = { [key: string]: unknown };
 export function createPagination(params: PaginationParams) {
   const { first, after, last, before } = params;
 
+  if (first === undefined && last === undefined) {
+    throw new Error('pagination requires either a `first` or `last` param');
+  }
+
   const paginationSliceParams = getInternalSliceParams({
     first,
     after,
@@ -183,7 +187,9 @@ export function createPagination(params: PaginationParams) {
       ];
     }
 
-    throw new Error('invalid state for getRows');
+    throw new Error(
+      'the queried row count exceeds the expected limit based on the pagination params'
+    );
   };
 
   function getPage<T = Row>(
@@ -195,6 +201,18 @@ export function createPagination(params: PaginationParams) {
     const cursorAlias = getAlias(params.cursorColumn);
 
     const [items, adjacentItem] = processItems(rows);
+
+    if (items.length === 0) {
+      return {
+        edges: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          endCursor: undefined,
+          startCursor: undefined,
+        },
+      };
+    }
 
     const edges = [];
     for (const item of items) {
@@ -224,8 +242,8 @@ export function createPagination(params: PaginationParams) {
         paginationSliceParams.direction === 'forward'
           ? !!after
           : !!adjacentItem,
-      startCursor: edges.length ? edges[0].cursor : undefined,
-      endCursor: edges.length ? edges[edges.length - 1].cursor : undefined,
+      startCursor: edges[0].cursor,
+      endCursor: edges[edges.length - 1].cursor,
     };
 
     return {
@@ -287,11 +305,7 @@ function getSortDirection(
     return 'asc';
   }
 
-  if (specifiedSortDirection === 'asc') {
-    return 'desc';
-  }
-
-  throw new Error('unknown state for getSortDirection');
+  return 'desc';
 }
 
 type Comparator = '<' | '>';
@@ -309,14 +323,9 @@ function getComparator(
     }
   }
 
-  if (specifiedSortDirection === 'asc') {
-    if (paginationDirection === 'forward') {
-      return '>';
-    }
-    if (paginationDirection === 'backward') {
-      return '<';
-    }
+  if (paginationDirection === 'forward') {
+    return '>';
   }
 
-  throw new Error('unknown state for getComparator');
+  return '<';
 }

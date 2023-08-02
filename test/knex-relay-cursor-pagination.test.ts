@@ -44,14 +44,14 @@ describe('createPagination', () => {
     await pgContainer.stop();
   });
 
-  describe('paging variants', () => {
-    const baseParams: PaginationDatasetParams = {
-      from: 'posts',
-      sortColumn: 'creation_timestamp',
-      sortDirection: 'desc',
-      cursorColumn: 'id',
-    };
+  const baseParams: PaginationDatasetParams = {
+    from: 'posts',
+    sortColumn: 'creation_timestamp',
+    sortDirection: 'desc',
+    cursorColumn: 'id',
+  };
 
+  describe('paging variants', () => {
     const sortedPosts = [...posts].sort(
       (a, b) => b.creation_timestamp.getTime() - a.creation_timestamp.getTime()
     );
@@ -371,6 +371,76 @@ describe('createPagination', () => {
         expect(pagination.getPage(rows)).toEqual(testCase.expected);
       });
     });
+
+    test('forward paging, ascending', async () => {
+      const pagination = createPagination({
+        from: 'posts',
+        sortColumn: 'creation_timestamp',
+        sortDirection: 'asc',
+        cursorColumn: 'id',
+        first: 3,
+      });
+
+      const rows = await db
+        .from('posts')
+        .where(
+          pagination.where.column,
+          pagination.where.comparator,
+          pagination.where.value
+        )
+        .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
+        .limit(pagination.limit)
+        .select('*');
+
+      expect(pagination.getPage(rows)).toEqual({
+        edges: [
+          { node: posts[0], cursor: btoa(posts[0].id) },
+          { node: posts[1], cursor: btoa(posts[1].id) },
+          { node: posts[2], cursor: btoa(posts[2].id) },
+        ],
+        pageInfo: {
+          startCursor: btoa(posts[0].id),
+          endCursor: btoa(posts[2].id),
+          hasPreviousPage: false,
+          hasNextPage: true,
+        },
+      });
+    });
+
+    test('backward paging, ascending', async () => {
+      const pagination = createPagination({
+        from: 'posts',
+        sortColumn: 'creation_timestamp',
+        sortDirection: 'asc',
+        cursorColumn: 'id',
+        last: 3,
+      });
+
+      const rows = await db
+        .from('posts')
+        .where(
+          pagination.where.column,
+          pagination.where.comparator,
+          pagination.where.value
+        )
+        .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
+        .limit(pagination.limit)
+        .select('*');
+
+      expect(pagination.getPage(rows)).toEqual({
+        edges: [
+          { node: posts[5], cursor: btoa(posts[5].id) },
+          { node: posts[6], cursor: btoa(posts[6].id) },
+          { node: posts[7], cursor: btoa(posts[7].id) },
+        ],
+        pageInfo: {
+          startCursor: btoa(posts[5].id),
+          endCursor: btoa(posts[7].id),
+          hasPreviousPage: true,
+          hasNextPage: false,
+        },
+      });
+    });
   });
 
   describe('query from a common-table-expression', () => {
@@ -545,9 +615,183 @@ describe('createPagination', () => {
     });
   });
 
-  test.todo('throw if no slice params');
-  test.todo('custom obfuscateCursor');
-  test.todo('custom deobfuscateCursor');
-  test.todo('throw onCursorMissing');
-  test.todo('omit onCursorMissing');
+  test('empty rows', async () => {
+    const pagination = createPagination({
+      from: 'posts',
+      sortColumn: 'creation_timestamp',
+      sortDirection: 'desc',
+      cursorColumn: 'id',
+      first: 2,
+      after: btoa('99999999-9999-9999-9999-999999999999'),
+    });
+
+    const rows = await db
+      .from('posts')
+      .where(
+        pagination.where.column,
+        pagination.where.comparator,
+        pagination.where.value
+      )
+      .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
+      .limit(pagination.limit)
+      .select('*');
+
+    expect(pagination.getPage(rows)).toEqual({
+      edges: [],
+      pageInfo: {
+        startCursor: undefined,
+        endCursor: undefined,
+        hasPreviousPage: false,
+        hasNextPage: false,
+      },
+    });
+  });
+
+  test('throw if no slice params', () => {
+    const testCase = () =>
+      createPagination({
+        from: 'posts',
+        sortColumn: 'creation_timestamp',
+        sortDirection: 'desc',
+        cursorColumn: 'id',
+      });
+
+    expect(testCase).toThrow(
+      new Error('pagination requires either a `first` or `last` param')
+    );
+  });
+
+  test('custom obfuscateCursor and deobfuscateCursor', async () => {
+    const pagination = createPagination({
+      from: 'posts',
+      sortColumn: 'creation_timestamp',
+      sortDirection: 'desc',
+      cursorColumn: 'id',
+      first: 3,
+      obfuscateCursor: (s) => s,
+      deobfuscateCursor: (s) => s,
+    });
+
+    const rows = await db
+      .from('posts')
+      .where(
+        pagination.where.column,
+        pagination.where.comparator,
+        pagination.where.value
+      )
+      .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
+      .limit(pagination.limit)
+      .select('*');
+
+    expect(pagination.getPage(rows)).toEqual({
+      edges: [
+        { node: posts[7], cursor: posts[7].id },
+        { node: posts[6], cursor: posts[6].id },
+        { node: posts[5], cursor: posts[5].id },
+      ],
+      pageInfo: {
+        startCursor: posts[7].id,
+        endCursor: posts[5].id,
+        hasPreviousPage: false,
+        hasNextPage: true,
+      },
+    });
+  });
+
+  test('omit item onCursorMissing', async () => {
+    const pagination = createPagination({
+      from: 'posts',
+      sortColumn: 'creation_timestamp',
+      sortDirection: 'desc',
+      cursorColumn: 'id',
+      first: 3,
+    });
+
+    const rows = await db
+      .from('posts')
+      .where(
+        pagination.where.column,
+        pagination.where.comparator,
+        pagination.where.value
+      )
+      .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
+      .limit(pagination.limit)
+      .select('*');
+
+    delete rows[0].id;
+
+    expect(pagination.getPage(rows)).toEqual({
+      edges: [
+        { node: posts[6], cursor: btoa(posts[6].id) },
+        { node: posts[5], cursor: btoa(posts[5].id) },
+      ],
+      pageInfo: {
+        startCursor: btoa(posts[6].id),
+        endCursor: btoa(posts[5].id),
+        hasPreviousPage: false,
+        hasNextPage: true,
+      },
+    });
+  });
+
+  test('throw onCursorMissing', async () => {
+    const pagination = createPagination({
+      from: 'posts',
+      sortColumn: 'creation_timestamp',
+      sortDirection: 'desc',
+      cursorColumn: 'id',
+      first: 3,
+      onCursorMissing: 'throw',
+    });
+
+    const rows = await db
+      .from('posts')
+      .where(
+        pagination.where.column,
+        pagination.where.comparator,
+        pagination.where.value
+      )
+      .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
+      .limit(pagination.limit)
+      .select('*');
+
+    delete rows[0].id;
+
+    const testCase = () => pagination.getPage(rows);
+
+    expect(testCase).toThrow(new Error('cursor is missing'));
+  });
+
+  test('throw when too many rows provided', async () => {
+    const pagination = createPagination({
+      from: 'posts',
+      sortColumn: 'creation_timestamp',
+      sortDirection: 'desc',
+      cursorColumn: 'id',
+      first: 3,
+    });
+
+    const rows = await db
+      .from('posts')
+      .where(
+        pagination.where.column,
+        pagination.where.comparator,
+        pagination.where.value
+      )
+      .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
+      .limit(pagination.limit)
+      .select('*');
+
+    rows.push({
+      id: '99999999-9999-9999-9999-999999999999',
+    });
+
+    const testCase = () => pagination.getPage(rows);
+
+    expect(testCase).toThrow(
+      new Error(
+        'the queried row count exceeds the expected limit based on the pagination params'
+      )
+    );
+  });
 });
