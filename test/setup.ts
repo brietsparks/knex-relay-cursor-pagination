@@ -29,6 +29,7 @@ export async function createPgTestcontainer(): Promise<CreatePgTestcontainerResu
     .withEnv('POSTGRES_PASSWORD', containerParams.password)
     .withEnv('POSTGRES_USER', containerParams.user)
     .withEnv('POSTGRES_DB', containerParams.database)
+    .withStartupTimeout(120000)
     .start();
 
   const connectionParams = {

@@ -1,5 +1,7 @@
 # Knex Relay Cursor Pagination
 
+[![Coverage Status](https://coveralls.io/repos/github/brietsparks/knex-relay-cursor-pagination/badge.svg?branch=coveralls)](https://coveralls.io/github/brietsparks/knex-relay-cursor-pagination?branch=coveralls)
+
 Easily implement [relay cursor pagination](https://relay.dev/graphql/connections.htm) in your Knex data layer.
 
 ## Install
