@@ -1,5 +1,6 @@
 name: CI
 on: [push]
+
 jobs:
   build:
     name: Build, lint, and test on Node ${{ matrix.node }} and ${{ matrix.os }}
@@ -19,13 +20,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Setup rootless Docker
-        uses: ScribeMD/rootless-docker@0.2.2
-
-      - name: Start Docker
-        run: sudo systemctl start docker
-#      - name: Remove Docket root socket
-#        run: sudo rm -rf /var/run/docker.sock
+      - name: Print Docker status
+        run: systemctl status docker
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
@@ -36,8 +32,8 @@ jobs:
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
 
-      - name: Coveralls GitHub Action
-        uses: coverallsapp/github-action@v2
+#      - name: Coveralls GitHub Action
+#        uses: coverallsapp/github-action@v2
 
-      - name: Build
-        run: yarn build
+#      - name: Build
+#        run: yarn build
