@@ -37,7 +37,7 @@ describe('createPagination', () => {
       },
     });
     await db.migrate.up();
-  });
+  }, 120000);
 
   afterAll(async () => {
     await db.destroy();
