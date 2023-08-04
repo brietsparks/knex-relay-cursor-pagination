@@ -32,8 +32,8 @@ jobs:
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
 
-#      - name: Coveralls GitHub Action
-#        uses: coverallsapp/github-action@v2
+      - name: Coveralls GitHub Action
+        uses: coverallsapp/github-action@v2
 
-#      - name: Build
-#        run: yarn build
+      - name: Build
+        run: yarn build
