@@ -2,7 +2,11 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/brietsparks/knex-relay-cursor-pagination/badge.svg?branch=coveralls)](https://coveralls.io/github/brietsparks/knex-relay-cursor-pagination?branch=coveralls)
 
-Easily implement [relay cursor pagination](https://relay.dev/graphql/connections.htm) in your Knex data layer.
+Easy Relay cursor pagination for your Knex queries
+
+- 🚀 implements the [GraphQL Cursor Connections Specification](https://relay.dev/graphql/connections.htm)
+- 🔌 integrates easily with GraphQL tools like Apollo Server
+- 📦 zero dependencies, well-tested with 100% coverage
 
 ## Install
 
@@ -24,9 +28,9 @@ export type Post = {
 async function getPosts(first?: number, after?: string, last?: number, before?: string): Promise<Page<Post>> {
   const pagination = createPagination({
     from: 'posts',
-    cursorColumn: 'id',
     sortColumn: 'creation_timestamp',
     sortDirection: 'desc',
+    cursorColumn: 'id',
     first,
     after,
     last,
@@ -42,6 +46,48 @@ async function getPosts(first?: number, after?: string, last?: number, before?: 
   return pagination.getPage<Post>(rows);
 }
 ```
+
+### Advanced sorting criteria
+
+To sort by a derived sorting column, use Knex `.with` and pass the query alias to `.from`.
+
+Here is an example of sorting posts by their count of associated comments:
+```ts
+const cte = db
+    .from('posts')
+    .select(
+      'posts.*',
+      db.raw(`concat(count("comments"."id"), ':', "posts".id) as comments_count`)
+    )
+    .leftJoin('comments', 'posts.id', 'comments.post_id')
+    .groupBy('posts.id')
+    .orderBy('comments_count', 'desc');
+
+const pagination = createPagination({
+  from: 'cte',
+  sortColumn: 'comments_count',
+  sortDirection: 'desc',
+  cursorColumn: 'id',
+  first,
+  after,
+  last,
+  before,
+});
+
+const rows = await db
+  .with('cte', cte)
+  .from('cte')
+  .where(
+    pagination.where.column,
+    pagination.where.comparator,
+    pagination.where.value
+  )
+  .orderBy(pagination.orderBy.column, pagination.orderBy.direction)
+  .limit(pagination.limit);
+
+pagination.getPage<Post>(rows);
+```
+
 
 ## API
 
@@ -71,4 +117,5 @@ Either `first` or `last` is required
 
 ## Examples
 
-An example app is in the [/example](https://github.com/brietsparks/knex-relay-cursor-pagination/tree/master/example)directory of this repo. See its README.md for more info.
+See the example app in the [/example](https://github.com/brietsparks/knex-relay-cursor-pagination/tree/master/example) directory of this repo. See its README.md for more info.
+
