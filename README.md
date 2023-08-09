@@ -6,7 +6,7 @@ Easy Relay cursor pagination for your Knex queries
 
 - 🚀 implements the [GraphQL Cursor Connections Specification](https://relay.dev/graphql/connections.htm)
 - 🔌 integrates easily with GraphQL tools like Apollo Server
-- 📦 zero dependencies, well-tested with 100% coverage
+- 📦 well-tested with 100% coverage
 
 ## Install
 
