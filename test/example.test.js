@@ -1,15 +1,14 @@
-import knex, { Knex } from 'knex';
-import { v4 as uuid } from 'uuid';
-import { faker } from '@faker-js/faker';
+const knex = require('knex');
+const { v4: uuid } = require('uuid');
+const { faker } = require('@faker-js/faker');
 
-import { createPgTestcontainer, StartedPgTestContainer } from './setup';
+const { createPgTestcontainer } = require('./setup');
 
-import { createPagination } from '../src';
-
+const { createPagination } = require('../src');
 
 describe('example', () => {
-  let db: Knex;
-  let pgContainer: StartedPgTestContainer;
+  let db;
+  let pgContainer;
 
   beforeAll(async () => {
     const [container, connection] = await createPgTestcontainer();
