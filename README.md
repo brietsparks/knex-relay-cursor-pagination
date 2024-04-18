@@ -99,7 +99,7 @@ Takes a configuration parameter and returns an object containing values to pass 
 #### Dataset configuration:
 Required
 - `cursorColumn`: the column to be used for the cursor. Values must be unique
-- `sortColumn`: the column that the data is sorted by. Values must be unique
+- `sortColumn`: the column that the data is sorted by
 - `sortDirection`: the sort direction of the data
 - `from`: the table or common-table-expression being queried from
 
